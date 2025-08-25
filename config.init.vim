@@ -35,7 +35,7 @@ let g:python3_host_prog = '/usr/bin/python3'  " Ruta a tu Python 3
 " ========================
 "   MAPAS DE TECLAS ÚTILES
 " ========================
-nnoremap <F5> :w<CR>:!python3 %<CR>   " Ejecutar script Python con F5
+nnoremap <F5> :w<CR>:tabnew<CR>:terminal python3 %<CR>   " Ejecutar script Python con F5
 nnoremap <C-s> :w<CR>                 " Guardar con Ctrl+S
 nnoremap <C-q> :q<CR>                 " Salir con Ctrl+Q
 nnoremap <C-h> :nohlsearch<CR>        " Limpiar búsqueda con Ctrl+H
