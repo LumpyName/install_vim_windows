@@ -1,0 +1,4 @@
+# --- Comando para forzar el cambio de teclado de Windows en powershell
+Set-WinUserLanguageList en-US -Force 
+# --- Si solamente quieres cambiar el idioma del teclado sin tocar el sistema
+Set-WinInputMethodOverride -InputTip "0409:00000409"
