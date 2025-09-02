@@ -25,7 +25,7 @@ function Descargar-Y-ExtraerPortable {
         Write-Host " Descargando $nombre..."
         Invoke-WebRequest -Uri $url -OutFile $destZip
 
-        # Procesar segÃºn el tipo de archivo
+        # Procesar segun el tipo de archivo
         switch ($tipoArchivo) {
             'zip' {
                 Write-Host " Descomprimiendo $nombre Portable..."
@@ -139,24 +139,24 @@ if (!(Test-Path $initVimPath)) {
 } else {
     Write-Host "¿ El archivo init.vim ya existe en: $initVimPath ¿ no se descargará nuevamente."
 }
-# Verificar si la variable de entorno XDG_CONFIG_HOME ya estÃ¡ definida
+# Verificar si la variable de entorno XDG_CONFIG_HOME ya esta definida
 $xdgVar = [System.Environment]::GetEnvironmentVariable("XDG_CONFIG_HOME", "User")
 
 if ([string]::IsNullOrWhiteSpace($xdgVar)) {
 
     [System.Environment]::SetEnvironmentVariable("XDG_CONFIG_HOME", $path_nvim, "User")
-    Write-Host "âœ… Variable de entorno XDG_CONFIG_HOME configurada con: $path_nvim"
+    Write-Host " Variable de entorno XDG_CONFIG_HOME configurada con: $path_nvim"
 } else {
-    Write-Host " La variable de entorno XDG_CONFIG_HOME ya estÃ¡ definida como: $xdgVar"
+    Write-Host " La variable de entorno XDG_CONFIG_HOME ya esta¡ definida como: $xdgVar"
 }
 
 
 # =====================================================================
-# SE FINALIZÃ“ LA DESCARGA DE NVIM O SE OMITIÃ“
+# SE FINALIZA LA DESCARGA DE NVIM O SE OMITIÃ“
 # =====================================================================
 
 # =====================================================================
-# SE FINALIZÃ“ LA DESCARGA E INSTALACIÃ“N DE GIT Y NVIM O SE OMITIÃ“
+# SE FINALIZA LA DESCARGA E INSTALACIÃ“N DE GIT Y NVIM O SE OMITIÃ“
 # Y SE COMIENZA A REALIZAR EL ULTIMO PASO PARA ESTO
 # =====================================================================
 
@@ -192,7 +192,7 @@ $newPath = ($currentPathList -join ";")
 
 
 # =====================================================================
-# SI PYTHON NO ESTÃ INSTALADO AHORA LO INSTALAREMOS
+# SI PYTHON NO ESTA INSTALADO AHORA LO INSTALAREMOS
 # =====================================================================
 
     # Ruta donde se guardara¡ el instalador
@@ -224,12 +224,12 @@ $newPath = ($currentPathList -join ";")
     # Obtener versiÃ³n actual de Python
     $versionInfo = & python --version 2>&1
     $version = $versionInfo -replace '[^\d\.]', ''
-    Write-Host "VersiÃ³n de Python encontrada: $version"
+    Write-Host "Version de Python encontrada: $version"
 
     try {
         $actualVersion = [Version]$version
     } catch {
-        Write-Host "No se pudo determinar la versiÃ³n de Python. Puede estar mal instalado."
+        Write-Host "No se pudo determinar la version de Python. Puede estar mal instalado."
         Write-Host ""
         Write-Host "De todos modos descargamos el Portable entonces..."
 
@@ -245,14 +245,14 @@ $newPath = ($currentPathList -join ";")
     }
 
     if ($actualVersion -ge $requiredVersion) {
-        Write-Host " Python cumple con la versiÃ³n requerida (3.13.7 o superior)."
+        Write-Host " Python cumple con la version requerida (3.13.7 o superior)."
         return
     }
 
     Write-Host "La versin de Python es menor que 3.13.7."
     $instalar = Read-Host " ¿Quieres instalar la Ultima version de Python? (S/N)"
     if ($instalar -notmatch '^[sS]$') {
-        Write-Host "InstalaciÃ³n cancelada por el usuario."
+        Write-Host "Instalacion cancelada por el usuario."
         return
     }
 
