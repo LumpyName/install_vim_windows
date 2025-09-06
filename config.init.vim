@@ -1,6 +1,7 @@
 " ========================
 "   CONFIGURACIÓN BÁSICA
 " ========================
+set nobomb              " Codificación a UTF-8 sin BOM.
 set number              " Mostrar números de línea
 set relativenumber      " Números relativos para navegación
 set tabstop=4           " Tamaño de tabulaciones
