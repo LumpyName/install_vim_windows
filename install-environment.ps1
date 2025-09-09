@@ -1,18 +1,17 @@
 # PowerShell script para instalar Neovim y Python
 
-# FUNCION QUE SE REPITEN EN EL CODIGO
+# FUNCIONES QUE SE REPITEN EN EL CÓDIGO
 
 function Descargar-Y-ExtraerPortable {
     param (
-        [Parameter(Mandatory=$true)][string]$nombre,
-        [Parameter(Mandatory=$true)][string]$url,
-        [Parameter(Mandatory=$true)][string]$destZip,  # Para el archivo .zip
-        [Parameter(Mandatory=$true)][string]$destExtract,  # Para la carpeta de destino
-        [Parameter(Mandatory=$true)][string]$tipoArchivo  # 'zip' o 'exe'
+        [Parameter(Mandatory = $true)][string]$nombre,
+        [Parameter(Mandatory = $true)][string]$url,
+        [Parameter(Mandatory = $true)][string]$destZip,        # Ruta del archivo .zip o .exe
+        [Parameter(Mandatory = $true)][string]$destExtract,    # Carpeta de destino
+        [Parameter(Mandatory = $true)][string]$tipoArchivo     # 'zip' o 'exe'
     )
 
-    Write-Host "`n Verificando disponibilidad del recurso para $nombre..."
-
+    Write-Host "`nVerificando disponibilidad del recurso para $nombre..."
 
     try {
         # Si el archivo ya existe, lo notificamos y salimos
@@ -22,57 +21,57 @@ function Descargar-Y-ExtraerPortable {
         }
 
         # Descargar el archivo
-        Write-Host " Descargando $nombre..."
+        Write-Host "Descargando $nombre..."
         Invoke-WebRequest -Uri $url -OutFile $destZip
 
-        # Procesar segun el tipo de archivo
+        # Procesar según el tipo de archivo
         switch ($tipoArchivo) {
             'zip' {
-                Write-Host " Descomprimiendo $nombre Portable..."
+                Write-Host "Descomprimiendo $nombre Portable..."
                 Expand-Archive -Path $destZip -DestinationPath $destExtract -Force
             }
             'exe' {
-                Write-Host " Ejecutando el instalador de $nombre..."
+                Write-Host "Ejecutando el instalador de $nombre..."
                 Start-Process -FilePath $destZip -ArgumentList "/quiet InstallAllUsers=1 PrependPath=1" -Wait
-                Write-Host "`n La instalación de $nombre se completó correctamente."
+                Write-Host "La instalación de $nombre se completó correctamente."
             }
             default {
-                Write-Host " Tipo de archivo no soportado: $tipoArchivo"
+                Write-Host "Tipo de archivo no soportado: $tipoArchivo"
             }
         }
 
-    }
-    catch {
-        Write-Host " No se pudo descargar o ejecutar el recurso en $url"
-        Write-Host "   Detalle del error: $($_.Exception.Message)"
+    } catch {
+        Write-Host "No se pudo descargar o ejecutar el recurso en $url"
+        Write-Host "Detalle del error: $($_.Exception.Message)"
     }
 }
 
+function Crear-Carpeta {
+    param ([string]$ruta)
 
-function Crear-Carpeta ($ruta) {
     if (Test-Path -Path $ruta -PathType Container) {
-        Write-Host " La carpeta ya existe: $ruta"
+        Write-Host "La carpeta ya existe: $ruta"
         return
     }
 
     try {
         New-Item -Path $ruta -ItemType Directory -Force | Out-Null
-        Write-Host " Carpeta creada exitosamente: $ruta"
+        Write-Host "Carpeta creada exitosamente: $ruta"
     } catch {
-        Write-Host " Error al crear la carpeta: $($_.Exception.Message)"
+        Write-Host "Error al crear la carpeta: $($_.Exception.Message)"
     }
 }
 
+function Print-Finally {
+    param ([string]$path_exe, [array]$pathsToAdd)
 
-function Print-Finally ($path_exe){
     Start-Process -FilePath $path_exe -Wait
 
-    Write-Host "`n Se han agregado las siguientes rutas al entorno del usuario (PATH):`n"
+    Write-Host "`nSe han agregado las siguientes rutas al entorno del usuario (PATH):`n"
 
     $pathsToAdd | ForEach-Object {
-        Write-Host "   â€¢ $_"
+        Write-Host " - $_"
     }
-
 }
 
 # DEFINIR RUTAS
@@ -88,17 +87,17 @@ $path_gitzip = "$path_environment\MinGit-64.zip"
 $path_nvimzip = "$path_environment\nvim-win64.zip"
 $path_nvimbin = "$path_environment\nvim-win64\bin"
 
-# CREAR LAS CARPETA PREPARANDO CARPETAS
+# CREAR LAS CARPETAS
 Crear-Carpeta "$path_nvim\nvim"
 Crear-Carpeta $path_nvim
 Crear-Carpeta $path_toolsUser
 
 # =====================================================================
-# SI GIT NO ESTA INSTALADO AHORA LO INSTALAREMOS
+# SI GIT NO ESTÁ INSTALADO, SE INSTALA
 # =====================================================================
 
 if (!(Get-Command git -ErrorAction SilentlyContinue)) {
-    Write-Host "`n Git no esta¡ instalado. Instalando Git..."
+    Write-Host "`nGit no está instalado. Instalando Git..."
 
     Descargar-Y-ExtraerPortable `
         -nombre      "Git" `
@@ -109,16 +108,15 @@ if (!(Get-Command git -ErrorAction SilentlyContinue)) {
 }
 
 # =====================================================================
-# SE FINALIZA LA DESCARGA GIT O SE OMITA
+# FIN DE DESCARGA DE GIT
 # =====================================================================
 
-
 # =====================================================================
-# SI NVIM NO ESTA INSTALADO AHORA LO INSTALAREMOS
+# SI NVIM NO ESTÁ INSTALADO, SE INSTALA
 # =====================================================================
 
 if (!(Get-Command nvim -ErrorAction SilentlyContinue)) {
-    Write-Host "`n Nvim no esta¡ instalado. Instalando Nvim..."
+    Write-Host "`nNvim no está instalado. Instalando Nvim..."
     
     Descargar-Y-ExtraerPortable `
         -nombre      "Nvim" `
@@ -126,8 +124,11 @@ if (!(Get-Command nvim -ErrorAction SilentlyContinue)) {
         -destZip     $path_nvimzip `
         -destExtract $path_environment `
         -tipoArchivo "zip"
-    
 }
+
+# =====================================================================
+# CONFIGURACIÓN DE init.vim
+# =====================================================================
 
 $initVimPath = "$path_nvim\nvim\init.vim"
 
@@ -136,11 +137,12 @@ if (!(Test-Path $initVimPath)) {
     Invoke-WebRequest -Uri "https://raw.githubusercontent.com/LumpyName/install_vim_windows/main/config.init.vim" `
                       -OutFile $initVimPath
     Write-Host "init.vim descargado en: $initVimPath"
-} else {
-    Write-Host "El archivo init.vim ya existe en: $initVimPath — no se descargará nuevamente."
-}
+} else {Write-Host "El archivo init.vim ya existe en: $initVimPath no se descargará nuevamente."}
 
-# Verificar si la variable de entorno XDG_CONFIG_HOME ya está definida
+# =====================================================================
+# CONFIGURACIÓN DE VARIABLE DE ENTORNO
+# =====================================================================
+
 $xdgVar = [System.Environment]::GetEnvironmentVariable("XDG_CONFIG_HOME", "User")
 
 if ([string]::IsNullOrWhiteSpace($xdgVar) -or $xdgVar -ne $path_nvim) {
@@ -150,20 +152,18 @@ if ([string]::IsNullOrWhiteSpace($xdgVar) -or $xdgVar -ne $path_nvim) {
     Write-Host "La variable de entorno XDG_CONFIG_HOME ya está definida como: $xdgVar"
 }
 
-
-
 # =====================================================================
-# SE FINALIZA LA DESCARGA DE NVIM O SE OMITIA
-# =====================================================================
-
-# =====================================================================
-# SE FINALIZA LA DESCARGA E INSTALACION DE GIT Y NVIM O SE OMITIA
-# Y SE COMIENZA A REALIZAR EL ULTIMO PASO PARA ESTO
+# FIN DE DESCARGA/INSTALACIÓN DE NVIM
 # =====================================================================
 
 
-Write-Host "`nAgregando el GIT, NVIM, Carpeta al PATH del usuario"
-$pathsToAdd = @(     
+# =====================================================================
+# FINALIZA INSTALACIÓN DE GIT Y NVIM O SE OMITIÓ
+# COMIENZA LA CONFIGURACIÓN FINAL
+# =====================================================================
+
+Write-Host "`nAgregando Git, Nvim y herramientas al PATH del usuario..."
+$pathsToAdd = @(
     "$path_git\cmd",
     "$path_git\mingw64\bin",
     "$path_nvimbin",
@@ -190,73 +190,23 @@ foreach ($path in $pathsToAdd) {
 $newPath = ($currentPathList -join ";")
 [Environment]::SetEnvironmentVariable("Path", $newPath, "User")
 
-
-
 # =====================================================================
-# SI PYTHON NO ESTA INSTALADO AHORA LO INSTALAREMOS
+# SI PYTHON NO ESTÁ INSTALADO, SE INSTALA
 # =====================================================================
 
-    # Ruta donde se guardara el instalador
-    $pythonInstaller = "$path_environment\python-3.13.7-amd64.exe"
-    $requiredVersion = [Version]"3.13.7"
+# Ruta donde se guardará el instalador
+$pythonInstaller = "$path_environment\python-3.13.7-amd64.exe"
+$requiredVersion = [Version]"3.13.7"
 
-    # Verificar si Python esta instalado
-    $python = Get-Command python -ErrorAction SilentlyContinue
-    if (-not $python) {
-        Write-Host "Python no esta¡ instalado."
-        $instalar = Read-Host "Quieres instalar la ultima version de Python? (S/N)"
-        if ($instalar -notmatch '^[sS]$') {
-            Write-Host "Instalacion cancelada por el usuario."
-            return
-        }
-
-
-        Descargar-Y-ExtraerPortable `
-            -nombre      "Python" `
-            -url         "https://www.python.org/ftp/python/3.13.7/python-3.13.7-amd64.exe" `
-            -destZip     $pythonInstaller `
-            -destExtract $path_environment `
-            -tipoArchivo "exe"
-
-        Print-Finally $pythonInstaller
-        return
-    }
-
-    # Obtener version actual de Python
-    $versionInfo = & python --version 2>&1
-    $version = $versionInfo -replace '[^\d\.]', ''
-    Write-Host "Version de Python encontrada: $version"
-
-    try {
-        $actualVersion = [Version]$version
-    } catch {
-        Write-Host "No se pudo determinar la version de Python. Puede estar mal instalado."
-        Write-Host ""
-        Write-Host "De todos modos descargamos el Portable entonces..."
-
-        Descargar-Y-ExtraerPortable `
-            -nombre      "Python" `
-            -url         "https://www.python.org/ftp/python/3.13.7/python-3.13.7-amd64.exe" `
-            -destZip     $pythonInstaller `
-            -destExtract $path_environment `
-            -tipoArchivo "exe"
-
-        Print-Finally $pythonInstaller
-        return
-    }
-
-    if ($actualVersion -ge $requiredVersion) {
-        Write-Host " Python cumple con la version requerida (3.13.7 o superior)."
-        return
-    }
-
-    Write-Host "La versin de Python es menor que 3.13.7."
-    $instalar = Read-Host " ¿Quieres instalar la Ultima version de Python? (S/N)"
+# Verificar si Python está instalado
+$python = Get-Command python -ErrorAction SilentlyContinue
+if (-not $python) {
+    Write-Host "Python no está instalado."
+    $instalar = Read-Host "¿Quieres instalar la última versión de Python? (S/N)"
     if ($instalar -notmatch '^[sS]$') {
-        Write-Host "Instalacion cancelada por el usuario."
+        Write-Host "Instalación cancelada por el usuario."
         return
     }
-
 
     Descargar-Y-ExtraerPortable `
         -nombre      "Python" `
@@ -266,4 +216,48 @@ $newPath = ($currentPathList -join ";")
         -tipoArchivo "exe"
 
     Print-Finally $pythonInstaller
+    return
+}
 
+# Obtener versión actual de Python
+$versionInfo = & python --version 2>&1
+$version = $versionInfo -replace '[^\d\.]', ''
+Write-Host "Versión de Python encontrada: $version"
+
+try {
+    $actualVersion = [Version]$version
+} catch {
+    Write-Host "No se pudo determinar la versión de Python. Puede estar mal instalado."
+    Write-Host "Descargando versión portable..."
+
+    Descargar-Y-ExtraerPortable `
+        -nombre      "Python" `
+        -url         "https://www.python.org/ftp/python/3.13.7/python-3.13.7-amd64.exe" `
+        -destZip     $pythonInstaller `
+        -destExtract $path_environment `
+        -tipoArchivo "exe"
+
+    Print-Finally $pythonInstaller
+    return
+}
+
+if ($actualVersion -ge $requiredVersion) {
+    Write-Host "Python cumple con la versión requerida (3.13.7 o superior)."
+    return
+}
+
+Write-Host "La versión de Python es menor que 3.13.7."
+$instalar = Read-Host "¿Quieres instalar la última versión de Python? (S/N)"
+if ($instalar -notmatch '^[sS]$') {
+    Write-Host "Instalación cancelada por el usuario."
+    return
+}
+
+Descargar-Y-ExtraerPortable `
+    -nombre      "Python" `
+    -url         "https://www.python.org/ftp/python/3.13.7/python-3.13.7-amd64.exe" `
+    -destZip     $pythonInstaller `
+    -destExtract $path_environment `
+    -tipoArchivo "exe"
+
+Print-Finally $pythonInstaller
