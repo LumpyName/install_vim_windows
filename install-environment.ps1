@@ -94,7 +94,7 @@ Crear-Carpeta $path_nvim
 Crear-Carpeta $path_toolsUser
 
 # =====================================================================
-# SI GIT NO ESTÃ INSTALADO AHORA LO INSTALAREMOS
+# SI GIT NO ESTA INSTALADO AHORA LO INSTALAREMOS
 # =====================================================================
 
 if (!(Get-Command git -ErrorAction SilentlyContinue)) {
@@ -109,12 +109,12 @@ if (!(Get-Command git -ErrorAction SilentlyContinue)) {
 }
 
 # =====================================================================
-# SE FINALIZÃ“ LA DESCARGA GIT O SE OMITIÃ“
+# SE FINALIZA LA DESCARGA GIT O SE OMITA
 # =====================================================================
 
 
 # =====================================================================
-# SI NVIM NO ESTÃ INSTALADO AHORA LO INSTALAREMOS
+# SI NVIM NO ESTA INSTALADO AHORA LO INSTALAREMOS
 # =====================================================================
 
 if (!(Get-Command nvim -ErrorAction SilentlyContinue)) {
@@ -132,31 +132,32 @@ if (!(Get-Command nvim -ErrorAction SilentlyContinue)) {
 $initVimPath = "$path_nvim\nvim\init.vim"
 
 if (!(Test-Path $initVimPath)) {
-    Write-Host "¿ Descargando archivo init.vim..."
+    Write-Host "Descargando archivo init.vim..."
     Invoke-WebRequest -Uri "https://raw.githubusercontent.com/LumpyName/install_vim_windows/main/config.init.vim" `
                       -OutFile $initVimPath
-    Write-Host "¿ init.vim descargado en: $initVimPath"
+    Write-Host "init.vim descargado en: $initVimPath"
 } else {
-    Write-Host "¿ El archivo init.vim ya existe en: $initVimPath ¿ no se descargará nuevamente."
+    Write-Host "El archivo init.vim ya existe en: $initVimPath — no se descargará nuevamente."
 }
-# Verificar si la variable de entorno XDG_CONFIG_HOME ya esta definida
+
+# Verificar si la variable de entorno XDG_CONFIG_HOME ya está definida
 $xdgVar = [System.Environment]::GetEnvironmentVariable("XDG_CONFIG_HOME", "User")
 
-if ([string]::IsNullOrWhiteSpace($xdgVar)) {
-
+if ([string]::IsNullOrWhiteSpace($xdgVar) -or $xdgVar -ne $path_nvim) {
     [System.Environment]::SetEnvironmentVariable("XDG_CONFIG_HOME", $path_nvim, "User")
-    Write-Host " Variable de entorno XDG_CONFIG_HOME configurada con: $path_nvim"
+    Write-Host "Variable de entorno XDG_CONFIG_HOME configurada con: $path_nvim"
 } else {
-    Write-Host " La variable de entorno XDG_CONFIG_HOME ya esta¡ definida como: $xdgVar"
+    Write-Host "La variable de entorno XDG_CONFIG_HOME ya está definida como: $xdgVar"
 }
 
 
+
 # =====================================================================
-# SE FINALIZA LA DESCARGA DE NVIM O SE OMITIÃ“
+# SE FINALIZA LA DESCARGA DE NVIM O SE OMITIA
 # =====================================================================
 
 # =====================================================================
-# SE FINALIZA LA DESCARGA E INSTALACIÃ“N DE GIT Y NVIM O SE OMITIÃ“
+# SE FINALIZA LA DESCARGA E INSTALACION DE GIT Y NVIM O SE OMITIA
 # Y SE COMIENZA A REALIZAR EL ULTIMO PASO PARA ESTO
 # =====================================================================
 
@@ -175,7 +176,7 @@ $currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
 # Convertir el PATH en una lista
 $currentPathList = $currentPath.Split(";")
 
-# Agregar cada ruta si no existe aÃºn
+# Agregar cada ruta si no existe
 foreach ($path in $pathsToAdd) {
     if (-not ($currentPathList -contains $path)) {
         $currentPathList += $path
@@ -195,7 +196,7 @@ $newPath = ($currentPathList -join ";")
 # SI PYTHON NO ESTA INSTALADO AHORA LO INSTALAREMOS
 # =====================================================================
 
-    # Ruta donde se guardara¡ el instalador
+    # Ruta donde se guardara el instalador
     $pythonInstaller = "$path_environment\python-3.13.7-amd64.exe"
     $requiredVersion = [Version]"3.13.7"
 
@@ -221,7 +222,7 @@ $newPath = ($currentPathList -join ";")
         return
     }
 
-    # Obtener versiÃ³n actual de Python
+    # Obtener version actual de Python
     $versionInfo = & python --version 2>&1
     $version = $versionInfo -replace '[^\d\.]', ''
     Write-Host "Version de Python encontrada: $version"
