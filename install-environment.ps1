@@ -1,48 +1,73 @@
-# PowerShell script para instalar Neovim y Python
+# PowerShell script para instalar Neovim, Git y Python
+# Con manejo robusto de errores
 
-# FUNCIONES QUE SE REPITEN EN EL CÓDIGO
+# Configurar para que errores no capturados detengan el script
+$ErrorActionPreference = "Stop"
+
+# =====================================================================
+# FUNCIONES PRINCIPALES
+# =====================================================================
 
 function Descargar-Y-ExtraerPortable {
     param (
         [Parameter(Mandatory = $true)][string]$nombre,
         [Parameter(Mandatory = $true)][string]$url,
-        [Parameter(Mandatory = $true)][string]$destZip,        # Ruta del archivo .zip o .exe
-        [Parameter(Mandatory = $true)][string]$destExtract,    # Carpeta de destino
-        [Parameter(Mandatory = $true)][string]$tipoArchivo     # 'zip' o 'exe'
+        [Parameter(Mandatory = $true)][string]$destZip,
+        [Parameter(Mandatory = $true)][string]$destExtract,
+        [Parameter(Mandatory = $true)][string]$tipoArchivo
     )
 
     Write-Host "`nVerificando disponibilidad del recurso para $nombre..."
 
     try {
-        # Si el archivo ya existe, lo notificamos y salimos
+        # Si el archivo ya existe, lo notificamos y salimos de la funcion
         if (Test-Path $destZip) {
             Write-Host "El archivo $nombre ya existe en $destZip"
-            return
+            return $true
         }
 
         # Descargar el archivo
-        Write-Host "Descargando $nombre..."
-        Invoke-WebRequest -Uri $url -OutFile $destZip
+        Write-Host "Descargando $nombre desde $url..."
+        Invoke-WebRequest -Uri $url -OutFile $destZip -ErrorAction Stop
 
-        # Procesar según el tipo de archivo
+        # Verificar que se descargo correctamente
+        if (!(Test-Path $destZip)) {
+            throw "El archivo no se descargo correctamente: $destZip"
+        }
+
+        Write-Host "Descarga completada exitosamente."
+
+        # Procesar segun el tipo de archivo
         switch ($tipoArchivo) {
             'zip' {
                 Write-Host "Descomprimiendo $nombre Portable..."
-                Expand-Archive -Path $destZip -DestinationPath $destExtract -Force
+                Expand-Archive -Path $destZip -DestinationPath $destExtract -Force -ErrorAction Stop
+                Write-Host "Descompresion completada."
             }
             'exe' {
                 Write-Host "Ejecutando el instalador de $nombre..."
-                Start-Process -FilePath $destZip -ArgumentList "/quiet InstallAllUsers=1 PrependPath=1" -Wait
-                Write-Host "La instalación de $nombre se completó correctamente."
+                $process = Start-Process -FilePath $destZip -ArgumentList "/quiet InstallAllUsers=1 PrependPath=1" -Wait -PassThru
+                
+                if ($process.ExitCode -ne 0) {
+                    throw "El instalador de $nombre fallo con codigo de salida: $($process.ExitCode)"
+                }
+                
+                Write-Host "La instalacion de $nombre se completo correctamente."
             }
             default {
-                Write-Host "Tipo de archivo no soportado: $tipoArchivo"
+                throw "Tipo de archivo no soportado: $tipoArchivo"
             }
         }
 
+        return $true
+
     } catch {
-        Write-Host "No se pudo descargar o ejecutar el recurso en $url"
-        Write-Host "Detalle del error: $($_.Exception.Message)"
+        Write-Host "`n[ERROR CRITICO] Error al procesar $nombre" -ForegroundColor Red
+        Write-Host "URL: $url" -ForegroundColor Yellow
+        Write-Host "Detalle del error:" -ForegroundColor Yellow
+        Write-Host $_.Exception.Message -ForegroundColor Red
+        Write-Host $_.ScriptStackTrace -ForegroundColor DarkGray
+        exit 1
     }
 }
 
@@ -51,28 +76,69 @@ function Crear-Carpeta {
 
     if (Test-Path -Path $ruta -PathType Container) {
         Write-Host "La carpeta ya existe: $ruta"
-        return
+        return $true
     }
 
     try {
-        New-Item -Path $ruta -ItemType Directory -Force | Out-Null
+        New-Item -Path $ruta -ItemType Directory -Force -ErrorAction Stop | Out-Null
         Write-Host "Carpeta creada exitosamente: $ruta"
+        return $true
     } catch {
-        Write-Host "Error al crear la carpeta: $($_.Exception.Message)"
+        Write-Host "`n[ERROR CRITICO] Error al crear carpeta" -ForegroundColor Red
+        Write-Host "Ruta: $ruta" -ForegroundColor Yellow
+        Write-Host "Detalle del error:" -ForegroundColor Yellow
+        Write-Host $_.Exception.Message -ForegroundColor Red
+        Write-Host $_.ScriptStackTrace -ForegroundColor DarkGray
+        exit 1
     }
 }
 
-function Print-Finally {
-    param ([string]$path_exe, [array]$pathsToAdd)
+function Agregar-AlPATH {
+    param ([array]$pathsToAdd)
 
-    Start-Process -FilePath $path_exe -Wait
-
-    Write-Host "`nSe han agregado las siguientes rutas al entorno del usuario (PATH):`n"
-
-    $pathsToAdd | ForEach-Object {
-        Write-Host " - $_"
+    Write-Host "`nAgregando rutas al PATH del usuario..."
+    
+    try {
+        # Obtener el PATH actual del usuario
+        $currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
+        
+        # Convertir el PATH en una lista
+        $currentPathList = $currentPath.Split(";")
+        
+        # Agregar cada ruta si no existe
+        foreach ($path in $pathsToAdd) {
+            if (-not ($currentPathList -contains $path)) {
+                $currentPathList += $path
+                Write-Host "Ruta agregada: $path"
+            } else {
+                Write-Host "La ruta ya estaba presente: $path"
+            }
+        }
+        
+        # Unir las rutas y actualizar el PATH de usuario
+        $newPath = ($currentPathList -join ";")
+        [Environment]::SetEnvironmentVariable("Path", $newPath, "User")
+        
+        Write-Host "PATH actualizado correctamente." -ForegroundColor Green
+        return $true
+        
+    } catch {
+        Write-Host "`n[ERROR CRITICO] Error al actualizar el PATH" -ForegroundColor Red
+        Write-Host "Detalle del error:" -ForegroundColor Yellow
+        Write-Host $_.Exception.Message -ForegroundColor Red
+        Write-Host $_.ScriptStackTrace -ForegroundColor DarkGray
+        exit 1
     }
 }
+
+# =====================================================================
+# INICIO DEL SCRIPT PRINCIPAL
+# =====================================================================
+
+Write-Host "==================================================================" -ForegroundColor Cyan
+Write-Host "  Script de instalacion de Entorno de Desarrollo" -ForegroundColor Cyan
+Write-Host "  Git + Neovim + Python" -ForegroundColor Cyan
+Write-Host "==================================================================" -ForegroundColor Cyan
 
 # DEFINIR RUTAS
 $path_nvim = "C:\ProgrammingEnvironment\config_nvim"
@@ -88,16 +154,19 @@ $path_nvimzip = "$path_environment\nvim-win64.zip"
 $path_nvimbin = "$path_environment\nvim-win64\bin"
 
 # CREAR LAS CARPETAS
+Write-Host "`n[PASO 1] Creando estructura de carpetas..." -ForegroundColor Cyan
 Crear-Carpeta "$path_nvim\nvim"
 Crear-Carpeta $path_nvim
 Crear-Carpeta $path_toolsUser
 
 # =====================================================================
-# SI GIT NO ESTÁ INSTALADO, SE INSTALA
+# INSTALACION DE GIT
 # =====================================================================
 
+Write-Host "`n[PASO 2] Verificando instalacion de Git..." -ForegroundColor Cyan
+
 if (!(Get-Command git -ErrorAction SilentlyContinue)) {
-    Write-Host "`nGit no está instalado. Instalando Git..."
+    Write-Host "Git no esta instalado. Procediendo con la instalacion..."
 
     Descargar-Y-ExtraerPortable `
         -nombre      "Git" `
@@ -105,18 +174,20 @@ if (!(Get-Command git -ErrorAction SilentlyContinue)) {
         -destZip     $path_gitzip `
         -destExtract $path_git `
         -tipoArchivo "zip"
+    
+    Write-Host "[OK] Git instalado correctamente." -ForegroundColor Green
+} else {
+    Write-Host "[OK] Git ya esta instalado." -ForegroundColor Green
 }
 
 # =====================================================================
-# FIN DE DESCARGA DE GIT
+# INSTALACION DE NEOVIM
 # =====================================================================
 
-# =====================================================================
-# SI NVIM NO ESTÁ INSTALADO, SE INSTALA
-# =====================================================================
+Write-Host "`n[PASO 3] Verificando instalacion de Neovim..." -ForegroundColor Cyan
 
 if (!(Get-Command nvim -ErrorAction SilentlyContinue)) {
-    Write-Host "`nNvim no está instalado. Instalando Nvim..."
+    Write-Host "Nvim no esta instalado. Procediendo con la instalacion..."
     
     Descargar-Y-ExtraerPortable `
         -nombre      "Nvim" `
@@ -124,45 +195,71 @@ if (!(Get-Command nvim -ErrorAction SilentlyContinue)) {
         -destZip     $path_nvimzip `
         -destExtract $path_environment `
         -tipoArchivo "zip"
+    
+    Write-Host "[OK] Neovim instalado correctamente." -ForegroundColor Green
+} else {
+    Write-Host "[OK] Neovim ya esta instalado." -ForegroundColor Green
 }
 
 # =====================================================================
-# CONFIGURACIÓN DE init.vim
+# CONFIGURACION DE init.vim
 # =====================================================================
+
+Write-Host "`n[PASO 4] Configurando init.vim..." -ForegroundColor Cyan
 
 $initVimPath = "$path_nvim\nvim\init.vim"
 
-if (!(Test-Path $initVimPath)) {
-    Write-Host "Descargando archivo init.vim..."
-    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/LumpyName/install_vim_windows/main/config.init.vim" `
-                      -OutFile $initVimPath
-    Write-Host "init.vim descargado en: $initVimPath"
-} else {Write-Host "El archivo init.vim ya existe en: $initVimPath no se descargará nuevamente."}
-
-# =====================================================================
-# CONFIGURACIÓN DE VARIABLE DE ENTORNO
-# =====================================================================
-
-$xdgVar = [System.Environment]::GetEnvironmentVariable("XDG_CONFIG_HOME", "User")
-
-if ([string]::IsNullOrWhiteSpace($xdgVar) -or $xdgVar -ne $path_nvim) {
-    [System.Environment]::SetEnvironmentVariable("XDG_CONFIG_HOME", $path_nvim, "User")
-    Write-Host "Variable de entorno XDG_CONFIG_HOME configurada con: $path_nvim"
-} else {
-    Write-Host "La variable de entorno XDG_CONFIG_HOME ya está definida como: $xdgVar"
+try {
+    if (!(Test-Path $initVimPath)) {
+        Write-Host "Descargando archivo init.vim..."
+        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/LumpyName/install_vim_windows/main/config.init.vim" `
+                          -OutFile $initVimPath -ErrorAction Stop
+        
+        if (!(Test-Path $initVimPath)) {
+            throw "El archivo init.vim no se descargo correctamente"
+        }
+        
+        Write-Host "[OK] init.vim descargado en: $initVimPath" -ForegroundColor Green
+    } else {
+        Write-Host "[OK] El archivo init.vim ya existe en: $initVimPath" -ForegroundColor Green
+    }
+} catch {
+    Write-Host "`n[ERROR CRITICO] Error al descargar init.vim" -ForegroundColor Red
+    Write-Host "Detalle del error:" -ForegroundColor Yellow
+    Write-Host $_.Exception.Message -ForegroundColor Red
+    Write-Host $_.ScriptStackTrace -ForegroundColor DarkGray
+    exit 1
 }
 
 # =====================================================================
-# FIN DE DESCARGA/INSTALACIÓN DE NVIM
+# CONFIGURACION DE VARIABLE DE ENTORNO XDG_CONFIG_HOME
 # =====================================================================
 
+Write-Host "`n[PASO 5] Configurando variable de entorno XDG_CONFIG_HOME..." -ForegroundColor Cyan
+
+try {
+    $xdgVar = [System.Environment]::GetEnvironmentVariable("XDG_CONFIG_HOME", "User")
+
+    if ([string]::IsNullOrWhiteSpace($xdgVar) -or $xdgVar -ne $path_nvim) {
+        [System.Environment]::SetEnvironmentVariable("XDG_CONFIG_HOME", $path_nvim, "User")
+        Write-Host "[OK] Variable de entorno XDG_CONFIG_HOME configurada con: $path_nvim" -ForegroundColor Green
+    } else {
+        Write-Host "[OK] La variable de entorno XDG_CONFIG_HOME ya esta definida como: $xdgVar" -ForegroundColor Green
+    }
+} catch {
+    Write-Host "`n[ERROR CRITICO] Error al configurar XDG_CONFIG_HOME" -ForegroundColor Red
+    Write-Host "Detalle del error:" -ForegroundColor Yellow
+    Write-Host $_.Exception.Message -ForegroundColor Red
+    Write-Host $_.ScriptStackTrace -ForegroundColor DarkGray
+    exit 1
+}
 
 # =====================================================================
-# FINALIZA INSTALACIÓN DE GIT Y NVIM O SE OMITIÓ
-# COMIENZA LA CONFIGURACIÓN FINAL
+# ACTUALIZACION DEL PATH
 # =====================================================================
 
-Write-Host "`nAgregando Git, Nvim y herramientas al PATH del usuario..."
+Write-Host "`n[PASO 6] Actualizando PATH del usuario..." -ForegroundColor Cyan
+
 $pathsToAdd = @(
     "$path_git\cmd",
     "$path_git\mingw64\bin",
@@ -170,94 +267,97 @@ $pathsToAdd = @(
     "$path_toolsUser"
 )
 
-# Obtener el PATH actual del usuario
-$currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
-
-# Convertir el PATH en una lista
-$currentPathList = $currentPath.Split(";")
-
-# Agregar cada ruta si no existe
-foreach ($path in $pathsToAdd) {
-    if (-not ($currentPathList -contains $path)) {
-        $currentPathList += $path
-        Write-Host "Ruta agregada: $path"
-    } else {
-        Write-Host "La ruta ya estaba presente: $path"
-    }
-}
-
-# Unir las rutas y actualizar el PATH de usuario
-$newPath = ($currentPathList -join ";")
-[Environment]::SetEnvironmentVariable("Path", $newPath, "User")
+Agregar-AlPATH -pathsToAdd $pathsToAdd
 
 # =====================================================================
-# SI PYTHON NO ESTÁ INSTALADO, SE INSTALA
+# INSTALACION DE PYTHON
 # =====================================================================
 
-# Ruta donde se guardará el instalador
+Write-Host "`n[PASO 7] Verificando instalacion de Python..." -ForegroundColor Cyan
+
 $pythonInstaller = "$path_environment\python-3.13.7-amd64.exe"
 $requiredVersion = [Version]"3.13.7"
+$necesitaInstalacion = $false
 
-# Verificar si Python está instalado
+# Verificar si Python esta instalado
 $python = Get-Command python -ErrorAction SilentlyContinue
+
 if (-not $python) {
-    Write-Host "Python no está instalado."
-    $instalar = Read-Host "¿Quieres instalar la última versión de Python? (S/N)"
-    if ($instalar -notmatch '^[sS]$') {
-        Write-Host "Instalación cancelada por el usuario."
-        return
+    Write-Host "Python no esta instalado."
+    $instalar = Read-Host "Quieres instalar Python 3.13.7? (S/N)"
+    
+    if ($instalar -match '^[sS]$') {
+        $necesitaInstalacion = $true
+    } else {
+        Write-Host "[!] Instalacion de Python omitida por el usuario." -ForegroundColor Yellow
     }
+} else {
+    # Obtener version actual de Python
+    $versionInfo = & python --version 2>&1
+    $version = $versionInfo -replace '[^\d\.]', ''
+    Write-Host "Version de Python encontrada: $version"
 
+    try {
+        $actualVersion = [Version]$version
+        
+        if ($actualVersion -ge $requiredVersion) {
+            Write-Host "[OK] Python cumple con la version requerida (3.13.7 o superior)." -ForegroundColor Green
+        } else {
+            Write-Host "La version de Python es menor que 3.13.7."
+            $instalar = Read-Host "Quieres instalar Python 3.13.7? (S/N)"
+            
+            if ($instalar -match '^[sS]$') {
+                $necesitaInstalacion = $true
+            } else {
+                Write-Host "[!] Actualizacion de Python omitida por el usuario." -ForegroundColor Yellow
+            }
+        }
+    } catch {
+        Write-Host "[!] No se pudo determinar la version de Python correctamente." -ForegroundColor Yellow
+        $instalar = Read-Host "Quieres instalar Python 3.13.7? (S/N)"
+        
+        if ($instalar -match '^[sS]$') {
+            $necesitaInstalacion = $true
+        } else {
+            Write-Host "[!] Instalacion de Python omitida por el usuario." -ForegroundColor Yellow
+        }
+    }
+}
+
+# Instalar Python si es necesario
+if ($necesitaInstalacion) {
     Descargar-Y-ExtraerPortable `
         -nombre      "Python" `
         -url         "https://www.python.org/ftp/python/3.13.7/python-3.13.7-amd64.exe" `
         -destZip     $pythonInstaller `
         -destExtract $path_environment `
         -tipoArchivo "exe"
-
-    Print-Finally $pythonInstaller
-    return
+    
+    Write-Host "[OK] Python 3.13.7 instalado correctamente." -ForegroundColor Green
+    Write-Host "`n[!] IMPORTANTE: Reinicia tu terminal para que los cambios surtan efecto." -ForegroundColor Yellow
 }
 
-# Obtener versión actual de Python
-$versionInfo = & python --version 2>&1
-$version = $versionInfo -replace '[^\d\.]', ''
-Write-Host "Versión de Python encontrada: $version"
+# =====================================================================
+# FIN DE LA INSTALACION BASE
+# =====================================================================
 
-try {
-    $actualVersion = [Version]$version
-} catch {
-    Write-Host "No se pudo determinar la versión de Python. Puede estar mal instalado."
-    Write-Host "Descargando versión portable..."
-
-    Descargar-Y-ExtraerPortable `
-        -nombre      "Python" `
-        -url         "https://www.python.org/ftp/python/3.13.7/python-3.13.7-amd64.exe" `
-        -destZip     $pythonInstaller `
-        -destExtract $path_environment `
-        -tipoArchivo "exe"
-
-    Print-Finally $pythonInstaller
-    return
+Write-Host "`n==================================================================" -ForegroundColor Cyan
+Write-Host "  [OK] Instalacion completada exitosamente" -ForegroundColor Green
+Write-Host "==================================================================" -ForegroundColor Cyan
+Write-Host "`nRutas agregadas al PATH del usuario:"
+$pathsToAdd | ForEach-Object {
+    Write-Host "  - $_" -ForegroundColor Gray
 }
+Write-Host "`n[!] Recuerda: Reinicia tu terminal para que los cambios surtan efecto.`n" -ForegroundColor Yellow
 
-if ($actualVersion -ge $requiredVersion) {
-    Write-Host "Python cumple con la versión requerida (3.13.7 o superior)."
-    return
-}
+# =====================================================================
+# AQUI PUEDES AGREGAR MAS CODIGO PARA OTRAS TAREAS
+# =====================================================================
 
-Write-Host "La versión de Python es menor que 3.13.7."
-$instalar = Read-Host "¿Quieres instalar la última versión de Python? (S/N)"
-if ($instalar -notmatch '^[sS]$') {
-    Write-Host "Instalación cancelada por el usuario."
-    return
-}
+# Ejemplo de codigo adicional que ahora SI se ejecutara:
+# Write-Host "`n[PASO 8] Configurando herramientas adicionales..." -ForegroundColor Cyan
+# Tu codigo aqui...
 
-Descargar-Y-ExtraerPortable `
-    -nombre      "Python" `
-    -url         "https://www.python.org/ftp/python/3.13.7/python-3.13.7-amd64.exe" `
-    -destZip     $pythonInstaller `
-    -destExtract $path_environment `
-    -tipoArchivo "exe"
-
-Print-Finally $pythonInstaller
+# =====================================================================
+# FIN DEL SCRIPT
+# =====================================================================
