@@ -9,38 +9,55 @@ REQUISITOS:
 - Archivo GenerateJSON.py con la clase GenerateJSON
 """
 
-from cryptography.fernet import Fernet
+import os
 import base64
 import hashlib
-import os
 import getpass
-from datetime import datetime
 import re
+from datetime import datetime
+
+from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 # Importar la clase GenerateJSON existente
 from GenerateJSON import GenerateJSON
 
 
-def generar_clave_desde_password(password):
-    """Genera una clave Fernet desde un password"""
-    key = hashlib.sha256(password.encode()).digest()
-    return base64.urlsafe_b64encode(key)
+def generar_clave_desde_password(password, salt=None):
+    # Generar salt aleatorio si no se proporciona
+    if salt is None:
+        salt = os.urandom(16)
+    
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt,
+        iterations=100000,
+    )
+    key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
+    return key, salt
 
 
 def encriptar_contenido(contenido, password):
-    """Encripta contenido y retorna el token encriptado"""
-    clave = generar_clave_desde_password(password)
+    clave, salt = generar_clave_desde_password(password)
     fernet = Fernet(clave)
     contenido_encriptado = fernet.encrypt(contenido.encode())
-    return contenido_encriptado.decode()
+    # Retornar salt + contenido encriptado
+    return base64.urlsafe_b64encode(salt + contenido_encriptado).decode()
 
 
 def desencriptar_contenido(contenido_encriptado, password):
-    """Desencripta contenido encriptado"""
     try:
-        clave = generar_clave_desde_password(password)
+        # Decodificar y extraer salt
+        data = base64.urlsafe_b64decode(contenido_encriptado.encode())
+        salt = data[:16]
+        encrypted = data[16:]
+        
+        # Generar clave con el salt original
+        clave, _ = generar_clave_desde_password(password, salt)
         fernet = Fernet(clave)
-        contenido = fernet.decrypt(contenido_encriptado.encode())
+        contenido = fernet.decrypt(encrypted)
         return contenido.decode()
     except:
         return None
