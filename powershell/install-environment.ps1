@@ -153,6 +153,9 @@ $path_gitzip = "$path_environment\MinGit-64.zip"
 $path_nvimzip = "$path_environment\nvim-win64.zip"
 $path_nvimbin = "$path_environment\nvim-win64\bin"
 
+# Para cambiar esta linea si se mueve el recurso
+$INIT_VIM_URL = "https://raw.githubusercontent.com/LumpyName/tools_environment/main/config/nvim/init.vim"
+
 # CREAR LAS CARPETAS
 Write-Host "`n[PASO 1] Creando estructura de carpetas..." -ForegroundColor Cyan
 Crear-Carpeta "$path_nvim\nvim"
@@ -212,7 +215,7 @@ $initVimPath = "$path_nvim\nvim\init.vim"
 try {
     if (!(Test-Path $initVimPath)) {
         Write-Host "Descargando archivo init.vim..."
-        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/LumpyName/install_vim_windows/main/config.init.vim" `
+        Invoke-WebRequest -Uri $INIT_VIM_URL
                           -OutFile $initVimPath -ErrorAction Stop
         
         if (!(Test-Path $initVimPath)) {
