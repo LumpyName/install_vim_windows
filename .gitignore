@@ -1,0 +1,316 @@
+# ============================================
+# PYTHON GITIGNORE - COMPLETO
+# ============================================
+
+# ============================================
+# PYTHON BYTECODE Y CACHE
+# ============================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# ============================================
+# DISTRIBUCIONES Y BUILDS
+# ============================================
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+*.manifest
+*.spec
+
+# ============================================
+# ENTORNOS VIRTUALES
+# ============================================
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+.python-version
+pipenv/
+Pipfile.lock
+
+# ============================================
+# PYTEST Y TESTING
+# ============================================
+.pytest_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+*.cover
+*.log
+.cache
+nosetests.xml
+.hypothesis/
+
+# ============================================
+# JUPYTER NOTEBOOKS
+# ============================================
+.ipynb_checkpoints
+*.ipynb_checkpoints/
+profile_default/
+ipython_config.py
+
+# ============================================
+# MYPY (TYPE CHECKING)
+# ============================================
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+
+# ============================================
+# IDES Y EDITORES
+# ============================================
+# PyCharm
+.idea/
+*.iml
+*.iws
+.idea_modules/
+
+# VSCode
+.vscode/
+*.code-workspace
+.history/
+
+# Spyder
+.spyderproject
+.spyproject
+
+# Rope
+.ropeproject
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+.vim/
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+
+# ============================================
+# DATABASES
+# ============================================
+*.db
+*.sqlite
+*.sqlite3
+db.sqlite3
+*.sql
+
+# ============================================
+# ARCHIVOS DE CONFIGURACION SENSIBLES
+# ============================================
+.env
+.env.local
+.env.*.local
+*.env
+secrets.json
+config.ini
+credentials.json
+*.pem
+*.key
+*.cert
+
+# ============================================
+# LOGS Y TEMPORALES
+# ============================================
+*.log
+*.pot
+*.pyc
+*.pyo
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+
+# ============================================
+# ARCHIVOS DEL SISTEMA OPERATIVO
+# ============================================
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# MacOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Linux
+*~
+.directory
+.Trash-*
+.nfs*
+
+# ============================================
+# CELERY
+# ============================================
+celerybeat-schedule
+celerybeat.pid
+
+# ============================================
+# DJANGO
+# ============================================
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+/media
+/staticfiles
+/static
+
+# ============================================
+# FLASK
+# ============================================
+instance/
+.webassets-cache
+
+# ============================================
+# SCRAPY
+# ============================================
+.scrapy
+
+# ============================================
+# SPHINX (DOCUMENTACION)
+# ============================================
+docs/_build/
+docs/_static/
+docs/_templates/
+target/
+
+# ============================================
+# PYINSTALLER
+# ============================================
+*.manifest
+*.spec
+
+# ============================================
+# ARCHIVOS COMPRIMIDOS
+# ============================================
+*.zip
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+
+# ============================================
+# MACHINE LEARNING / DATA SCIENCE
+# ============================================
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.joblib
+*.model
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+wandb/
+mlruns/
+checkpoints/
+outputs/
+lightning_logs/
+
+# Datasets grandes
+*.csv
+*.tsv
+*.json
+*.parquet
+data/
+datasets/
+raw_data/
+
+# ============================================
+# ARCHIVOS PERSONALIZADOS (PROYECTO ESPECIFICO)
+# ============================================
+# Descomenta segun necesites:
+# config.json
+# EncryptedDates.json
+# configuracion.json
+# *.backup
+# *.enc
+# *.dec
+
+# Archivos temporales de prueba
+test_*.txt
+temp_*.py
+debug_*.py
+scratch.py
+playground.py
+
+# ============================================
+# NODE_MODULES (si usas herramientas JS/TS)
+# ============================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# ============================================
+# OTROS
+# ============================================
+.sass-cache/
+*.pid
+*.seed
+*.pid.lock
+.grunt
+.lock-wscript
+.npm
+.eslintcache
+.node_repl_history
+*.tsbuildinfo
+.ruff_cache/
