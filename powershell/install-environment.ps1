@@ -215,8 +215,7 @@ $initVimPath = "$path_nvim\nvim\init.vim"
 try {
     if (!(Test-Path $initVimPath)) {
         Write-Host "Descargando archivo init.vim..."
-        Invoke-WebRequest -Uri $INIT_VIM_URL
-                          -OutFile $initVimPath -ErrorAction Stop
+        Invoke-WebRequest -Uri $INIT_VIM_URL -OutFile $initVimPath -ErrorAction Stop
         
         if (!(Test-Path $initVimPath)) {
             throw "El archivo init.vim no se descargo correctamente"
