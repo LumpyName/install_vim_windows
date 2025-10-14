@@ -67,7 +67,7 @@ function Descargar-Y-ExtraerPortable {
         Write-Host "Detalle del error:" -ForegroundColor Yellow
         Write-Host $_.Exception.Message -ForegroundColor Red
         Write-Host $_.ScriptStackTrace -ForegroundColor DarkGray
-        exit 1
+        throw "Instalación fallida"
     }
 }
 
@@ -89,7 +89,7 @@ function Crear-Carpeta {
         Write-Host "Detalle del error:" -ForegroundColor Yellow
         Write-Host $_.Exception.Message -ForegroundColor Red
         Write-Host $_.ScriptStackTrace -ForegroundColor DarkGray
-        exit 1
+        throw "Instalación fallida"
     }
 }
 
@@ -231,7 +231,7 @@ try {
     Write-Host "Detalle del error:" -ForegroundColor Yellow
     Write-Host $_.Exception.Message -ForegroundColor Red
     Write-Host $_.ScriptStackTrace -ForegroundColor DarkGray
-    exit 1
+    throw "Instalación fallida"
 }
 
 # =====================================================================
@@ -254,7 +254,7 @@ try {
     Write-Host "Detalle del error:" -ForegroundColor Yellow
     Write-Host $_.Exception.Message -ForegroundColor Red
     Write-Host $_.ScriptStackTrace -ForegroundColor DarkGray
-    exit 1
+    throw "Instalación fallida"
 }
 
 # =====================================================================
